@@ -2,12 +2,11 @@
 CrewAI task definitions for the AI-Powered Stocks Analyser.
 
 Tasks:
-  - get_company_financials  → income statements + fundamentals (Phase 1, parallel)
-  - get_company_news        → latest news and sentiment    (Phase 1, parallel)
-  - analyse                 → full financial + news analysis (Phase 2, sequential)
-  - advise                  → structured investment recommendation (Phase 2, sequential)
-
-Output files are written to the task_outputs/ directory.
+  - get_company_financials    → fundamentals + balance sheet + cash flow etc. (Phase 1, parallel)
+  - get_company_news          → latest news and sentiment                      (Phase 1, parallel)
+  - run_technical_analysis    → RSI, MACD, Bollinger Bands, MAs, volume       (Phase 1, parallel)
+  - analyse                   → full combined analysis                         (Phase 2, sequential)
+  - advise                    → structured investment recommendation            (Phase 2, sequential)
 """
 
 import os
@@ -17,7 +16,7 @@ from crewai import Task
 from crewai.tasks.task_output import TaskOutput
 from pydantic import BaseModel, Field
 
-from agents import analyst, data_explorer, fin_expert, news_info_explorer
+from agents import analyst, data_explorer, fin_expert, news_info_explorer, technical_analyst
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -30,50 +29,31 @@ os.makedirs("task_outputs", exist_ok=True)
 class InvestmentRecommendation(BaseModel):
     """Structured output model for the final investment recommendation."""
 
-    action: Literal["BUY", "HOLD", "SELL"] = Field(
-        description="Investment action to take"
-    )
-    confidence: float = Field(
-        description="Confidence score between 0.0 (no confidence) and 1.0 (very confident)"
-    )
+    action: Literal["BUY", "HOLD", "SELL"] = Field(description="Investment action to take")
+    confidence: float = Field(description="Confidence score between 0.0 and 1.0")
     target_price: float = Field(description="12-month target price in local currency")
     current_price: float = Field(description="Current market price of the stock")
-    reasons: list[str] = Field(
-        description="Key reasons supporting the recommendation (minimum 2)"
-    )
-    risks: list[str] = Field(
-        description="Key risks an investor should be aware of (minimum 1)"
-    )
+    reasons: list[str] = Field(description="Key reasons supporting the recommendation (minimum 2)")
+    risks: list[str] = Field(description="Key risks an investor should be aware of (minimum 1)")
 
 
-# ── Guardrail ─────────────────────────────────────────────────────────────────
+# ── Guardrail ──────────────────────────────────────────────────────────────────
 
 
 def validate_recommendation(result: TaskOutput) -> Tuple[bool, Any]:
-    """
-    Guardrail to ensure the investment recommendation meets minimum quality standards.
-
-    Checks:
-      - confidence is in [0.0, 1.0]
-      - at least 2 reasons are provided
-      - at least 1 risk is identified
-    """
+    """Ensure the investment recommendation meets minimum quality standards."""
     rec = result.pydantic
 
     if not rec:
         logger.warning("Guardrail failed: recommendation object is empty.")
-        return (False, "Recommendation output could not be parsed into the expected schema.")
+        return (False, "Recommendation could not be parsed into the expected schema.")
 
     if not (0.0 <= rec.confidence <= 1.0):
-        logger.warning(
-            "Guardrail failed: confidence=%.2f is out of range [0, 1].", rec.confidence
-        )
+        logger.warning("Guardrail failed: confidence=%.2f out of range.", rec.confidence)
         return (False, "Confidence score must be between 0.0 and 1.0.")
 
     if len(rec.reasons) < 2:
-        logger.warning(
-            "Guardrail failed: only %d reason(s) provided (minimum 2).", len(rec.reasons)
-        )
+        logger.warning("Guardrail failed: only %d reason(s) (minimum 2).", len(rec.reasons))
         return (False, "Please provide at least 2 reasons for the recommendation.")
 
     if len(rec.risks) < 1:
@@ -82,10 +62,7 @@ def validate_recommendation(result: TaskOutput) -> Tuple[bool, Any]:
 
     logger.debug(
         "Guardrail passed: action=%s confidence=%.2f reasons=%d risks=%d",
-        rec.action,
-        rec.confidence,
-        len(rec.reasons),
-        len(rec.risks),
+        rec.action, rec.confidence, len(rec.reasons), len(rec.risks),
     )
     return (True, rec)
 
@@ -96,12 +73,15 @@ logger.debug("Defining tasks…")
 
 get_company_financials = Task(
     description=(
-        "Get financial data like income statements and other fundamental ratios "
-        "for stock: {stock}. Use the year 2026 as the current year."
+        "Gather comprehensive financial data for stock: {stock}. Use the year 2026 as the current year. "
+        "Collect: company info, income statements, balance sheet, cash flow statement, "
+        "dividend history, analyst recommendations, insider transactions, and institutional holdings."
     ),
     expected_output=(
-        "Detailed information from the income statement and key financial ratios for {stock}. "
-        "Indicate the current financial status and the trend over the reporting period."
+        "A detailed financial profile of {stock} covering: income statement trends, balance sheet "
+        "health (assets, liabilities, debt), cash flow (operating and free cash flow), dividend history, "
+        "analyst consensus, insider activity, and top institutional holders. "
+        "Highlight key trends and the overall financial health."
     ),
     agent=data_explorer,
 )
@@ -109,38 +89,61 @@ get_company_financials = Task(
 get_company_news = Task(
     description=(
         "Get the latest news and business information about company: {stock}. "
-        "Use the year 2026 as the current year."
+        "Use the year 2026 as the current year. Look for recent earnings, management changes, "
+        "regulatory developments, product launches, and market sentiment."
     ),
     expected_output=(
-        "A comprehensive summary of the latest news, developments, and market sentiment "
-        "surrounding the company."
+        "A comprehensive summary of the latest news and developments surrounding the company, "
+        "including sentiment analysis (positive / negative / neutral) and potential market impact."
     ),
     agent=news_info_explorer,
 )
 
-analyse = Task(
+run_technical_analysis = Task(
     description=(
-        "Using the financial data and latest news gathered, make a thorough analysis "
-        "of the stock. Cover financial health, valuation, growth prospects, and risks."
+        "Perform a complete technical analysis on stock: {stock}. "
+        "Calculate and interpret RSI, MACD, Bollinger Bands, SMA50, SMA200, and volume trends. "
+        "Identify key signals: trend direction, momentum, overbought/oversold conditions, "
+        "and notable patterns (e.g. Golden Cross / Death Cross)."
     ),
     expected_output=(
-        "A comprehensive analysis of the stock outlining financial health, stock valuation, "
-        "key risks, and relevant news developments."
+        "A structured technical analysis report covering: current trend (bullish/bearish/sideways), "
+        "momentum signals (RSI, MACD), volatility (Bollinger Bands), trend strength (moving averages), "
+        "volume analysis, and an overall technical outlook with key price levels to watch."
+    ),
+    agent=technical_analyst,
+    output_file="task_outputs/technical_analysis.md",
+)
+
+analyse = Task(
+    description=(
+        "Using the fundamental financial data, latest news, and technical analysis gathered, "
+        "produce a thorough, balanced analysis of the stock. "
+        "Cover: financial health, valuation, growth prospects, technical outlook, and key risks."
+    ),
+    expected_output=(
+        "A comprehensive stock analysis covering: "
+        "(1) financial health and fundamentals, "
+        "(2) news and sentiment summary, "
+        "(3) technical outlook, "
+        "(4) valuation assessment, "
+        "(5) key risks and opportunities."
     ),
     agent=analyst,
-    context=[get_company_financials, get_company_news],
+    context=[get_company_financials, get_company_news, run_technical_analysis],
     output_file="task_outputs/financial_analysis.md",
 )
 
 advise = Task(
     description=(
-        "Based on the analysis provided and the current stock price, make a clear investment "
-        "recommendation. Provide the action (BUY / HOLD / SELL), confidence level, 12-month "
-        "target price, key reasons, and key risks."
+        "Based on the comprehensive analysis provided, make a clear investment recommendation. "
+        "Check the current stock price and provide a realistic 12-month target price. "
+        "Your recommendation must include: action (BUY/HOLD/SELL), confidence score, "
+        "target price, current price, key reasons (at least 2), and key risks (at least 1)."
     ),
     expected_output=(
-        "A structured investment recommendation with: action, confidence score, target price, "
-        "current price, list of reasons, and list of risks."
+        "A structured investment recommendation with: action, confidence score (0–1), "
+        "12-month target price, current price, reasons list, and risks list."
     ),
     agent=fin_expert,
     context=[analyse],
@@ -149,4 +152,4 @@ advise = Task(
     output_file="task_outputs/investment_recommendation.md",
 )
 
-logger.debug("All tasks defined successfully.")
+logger.debug("All 5 tasks defined successfully.")

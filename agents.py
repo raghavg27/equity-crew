@@ -4,7 +4,8 @@ CrewAI agent definitions for the AI-Powered Stocks Analyser.
 Agents:
   - data_explorer       → fetches financial statements and company fundamentals
   - news_info_explorer  → searches for latest news and market sentiment
-  - analyst             → synthesises financial data and news into a coherent analysis
+  - technical_analyst   → calculates and interprets technical indicators
+  - analyst             → synthesises all gathered data into a coherent analysis
   - fin_expert          → produces a final BUY / HOLD / SELL investment recommendation
 """
 
@@ -17,18 +18,25 @@ from dotenv import load_dotenv
 from logger import get_logger
 from tools import (
     exa_search_tool,
+    get_analyst_recommendations,
+    get_balance_sheet,
+    get_cash_flow,
     get_company_info,
     get_current_stock_price,
+    get_dividend_history,
     get_income_statements,
+    get_insider_transactions,
+    get_institutional_holdings,
+    get_technical_indicators,
 )
 
 load_dotenv()
 
 logger = get_logger(__name__)
 
-# ── LLM Configuration ──────────────────────────────────────────────────────────
+# ── LLM ────────────────────────────────────────────────────────────────────────
 
-logger.debug("Initialising LLM with model: openai/gpt-oss-120b:free via OpenRouter")
+logger.debug("Initialising LLM: openai/gpt-oss-120b:free via OpenRouter")
 
 llm = LLM(
     model="openai/gpt-oss-120b:free",
@@ -38,34 +46,43 @@ llm = LLM(
 
 # ── Agents ─────────────────────────────────────────────────────────────────────
 
-logger.debug("Defining agents…")
-
 data_explorer = Agent(
-    role="Data Researcher",
-    goal="Gather and provide financial data and company information about a stock",
+    role="Fundamental Data Researcher",
+    goal=(
+        "Gather comprehensive financial data for a stock — income statements, balance sheet, "
+        "cash flow, dividends, analyst recommendations, insider activity, and institutional holdings"
+    ),
     llm=llm,
     verbose=True,
     backstory=(
-        "You are an expert researcher who can gather detailed information about a "
-        "company or stock. When using tools, use the stock symbol and add a suffix "
-        '".NS" to it. Try with and without the suffix and see what works.'
+        "You are an expert fundamental researcher who can gather detailed financial information "
+        "about any publicly listed company. When using tools, use the stock symbol provided. "
+        'Try with and without the ".NS" or ".BO" suffix and see what works.'
     ),
-    tools=[get_company_info, get_income_statements],
-    max_iter=5,
+    tools=[
+        get_company_info,
+        get_income_statements,
+        get_balance_sheet,
+        get_cash_flow,
+        get_dividend_history,
+        get_analyst_recommendations,
+        get_insider_transactions,
+        get_institutional_holdings,
+    ],
+    max_iter=6,
     max_rpm=12,
-    max_execution_time=450,
+    max_execution_time=540,
     respect_context_window=True,
 )
 
 news_info_explorer = Agent(
-    role="News and Info Researcher",
-    goal="Gather and provide the latest news and information about a company from the internet",
+    role="News and Market Sentiment Researcher",
+    goal="Gather the latest news, developments, and market sentiment about a company from the internet",
     llm=llm,
     verbose=True,
     backstory=(
-        "You are an expert researcher who can gather detailed information about a company "
-        "from across the internet, including recent developments, regulatory news, and "
-        "market sentiment."
+        "You are an expert researcher who can find and summarise the latest news, regulatory updates, "
+        "management changes, and market sentiment surrounding any company."
     ),
     tools=[exa_search_tool],
     max_iter=5,
@@ -74,14 +91,39 @@ news_info_explorer = Agent(
     respect_context_window=True,
 )
 
-analyst = Agent(
-    role="Data Analyst",
-    goal="Consolidate financial data, stock information, and news into a comprehensive summary",
+technical_analyst = Agent(
+    role="Technical Analyst",
+    goal=(
+        "Analyse price action and technical indicators for a stock and provide a clear "
+        "technical outlook — trend direction, momentum, support/resistance levels, and signals"
+    ),
     llm=llm,
     verbose=True,
     backstory=(
-        "You are an expert in analysing financial data, stock- and company-related "
-        "current information, and making a comprehensive, balanced analysis."
+        "You are a seasoned technical analyst with deep expertise in reading charts and technical "
+        "indicators. You interpret RSI, MACD, Bollinger Bands, and moving averages to determine "
+        "whether a stock is in a bullish or bearish trend, overbought or oversold, and identify "
+        "key price levels. You present your findings in a clear, structured manner."
+    ),
+    tools=[get_technical_indicators],
+    max_iter=4,
+    max_rpm=10,
+    max_execution_time=300,
+    respect_context_window=True,
+)
+
+analyst = Agent(
+    role="Senior Financial Analyst",
+    goal=(
+        "Combine fundamental financial data, latest news, and technical analysis into a "
+        "comprehensive, balanced stock analysis"
+    ),
+    llm=llm,
+    verbose=True,
+    backstory=(
+        "You are a senior financial analyst with expertise in combining quantitative data "
+        "(financials, ratios), qualitative information (news, sentiment), and technical signals "
+        "into a complete, well-structured investment analysis."
     ),
     max_iter=4,
     max_rpm=10,
@@ -90,13 +132,13 @@ analyst = Agent(
 )
 
 fin_expert = Agent(
-    role="Financial Expert",
-    goal="Based on financial analysis of a stock, make a clear investment recommendation",
+    role="Financial Expert & Investment Advisor",
+    goal="Based on the full analysis of a stock, make a clear and well-reasoned investment recommendation",
     backstory=(
-        "You are an expert financial advisor who provides clear investment recommendations. "
-        "Consider the financial analysis, current information about the company, and the "
-        "current stock price to make a BUY / HOLD / SELL recommendation with reasons. "
-        'When using tools, try with and without the suffix ".NS" appended to the stock symbol.'
+        "You are a senior investment advisor who synthesises fundamental analysis, news, and technical "
+        "signals into a final BUY / HOLD / SELL recommendation. You always check the current stock "
+        "price and provide a realistic 12-month target. "
+        'When using tools, try with and without ".NS" or ".BO" suffix on the stock symbol.'
     ),
     llm=llm,
     verbose=True,
@@ -107,4 +149,4 @@ fin_expert = Agent(
     respect_context_window=True,
 )
 
-logger.debug("All agents initialised successfully.")
+logger.debug("All 5 agents initialised successfully.")

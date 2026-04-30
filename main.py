@@ -32,8 +32,8 @@ logger = get_logger(__name__)
 # Imported here (after logger/validators) to ensure any import-time logging
 # in agents.py / tasks.py uses the already-configured logger.
 
-from agents import analyst, data_explorer, fin_expert, news_info_explorer  # noqa: E402
-from tasks import advise, analyse, get_company_financials, get_company_news  # noqa: E402
+from agents import analyst, data_explorer, fin_expert, news_info_explorer, technical_analyst  # noqa: E402
+from tasks import advise, analyse, get_company_financials, get_company_news, run_technical_analysis  # noqa: E402
 
 financial_crew = Crew(
     agents=[data_explorer],
@@ -47,6 +47,15 @@ financial_crew = Crew(
 news_crew = Crew(
     agents=[news_info_explorer],
     tasks=[get_company_news],
+    verbose=True,
+    process=Process.sequential,
+    cache=True,
+    max_rpm=15,
+)
+
+technical_crew = Crew(
+    agents=[technical_analyst],
+    tasks=[run_technical_analysis],
     verbose=True,
     process=Process.sequential,
     cache=True,
@@ -110,25 +119,30 @@ def run_parallel_execution(stock_input: dict) -> tuple[float, float]:
     logger.info("━" * 60)
 
     # ── Phase 1: Parallel data gathering ──────────────────────────────────────
-    logger.info("🔄  Phase 1: Financial Data & News Gathering (running in parallel)…")
+    logger.info("🔄  Phase 1: Financial Data, News & Technical Analysis (running in parallel)…")
     phase1_start = time.time()
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
+    with ThreadPoolExecutor(max_workers=3) as executor:
         financial_future = executor.submit(
             run_crew_task, financial_crew, stock_input, "Financial Data Gathering"
         )
         news_future = executor.submit(
             run_crew_task, news_crew, stock_input, "News Gathering"
         )
+        technical_future = executor.submit(
+            run_crew_task, technical_crew, stock_input, "Technical Analysis"
+        )
 
         # Retrieve results — any exception raised inside the thread is re-raised here
         financial_result = financial_future.result()
         news_result = news_future.result()
+        technical_result = technical_future.result()
 
     phase1_duration = time.time() - phase1_start
     logger.info("✅  Phase 1 complete in %.2f seconds.", phase1_duration)
     logger.debug("Financial result type: %s", type(financial_result))
     logger.debug("News result type: %s", type(news_result))
+    logger.debug("Technical result type: %s", type(technical_result))
 
     # ── Phase 2: Sequential analysis ──────────────────────────────────────────
     logger.info("🔄  Phase 2: Analysis & Recommendation…")
@@ -299,6 +313,7 @@ def main() -> None:
         pct = (time_saved / estimated_sequential) * 100
         logger.info("  Efficiency gain     : %.1f%%", pct)
     logger.info("━" * 60)
+    logger.info("  📄  Technical → task_outputs/technical_analysis.md")
     logger.info("  📄  Analysis  → task_outputs/financial_analysis.md")
     logger.info("  📄  Advice    → task_outputs/investment_recommendation.md")
     logger.info("  📋  Full logs → logs/analyser_%s.log", time.strftime("%Y%m%d"))
