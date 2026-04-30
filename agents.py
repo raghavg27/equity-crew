@@ -14,7 +14,7 @@ from tools import (
 load_dotenv()
 
 llm = LLM(
-    model="openai/gpt-4.1-2025-04-14",
+    model="openai/gpt-oss-120b:free",
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
 )
