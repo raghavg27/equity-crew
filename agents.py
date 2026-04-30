@@ -1,9 +1,20 @@
+"""
+CrewAI agent definitions for the AI-Powered Stocks Analyser.
+
+Agents:
+  - data_explorer       → fetches financial statements and company fundamentals
+  - news_info_explorer  → searches for latest news and market sentiment
+  - analyst             → synthesises financial data and news into a coherent analysis
+  - fin_expert          → produces a final BUY / HOLD / SELL investment recommendation
+"""
+
 import os
 
 from crewai import Agent
 from crewai.llm import LLM
 from dotenv import load_dotenv
 
+from logger import get_logger
 from tools import (
     exa_search_tool,
     get_company_info,
@@ -13,11 +24,21 @@ from tools import (
 
 load_dotenv()
 
+logger = get_logger(__name__)
+
+# ── LLM Configuration ──────────────────────────────────────────────────────────
+
+logger.debug("Initialising LLM with model: openai/gpt-oss-120b:free via OpenRouter")
+
 llm = LLM(
     model="openai/gpt-oss-120b:free",
     api_key=os.getenv("OPENROUTER_API_KEY"),
     base_url="https://openrouter.ai/api/v1",
 )
+
+# ── Agents ─────────────────────────────────────────────────────────────────────
+
+logger.debug("Defining agents…")
 
 data_explorer = Agent(
     role="Data Researcher",
@@ -25,9 +46,9 @@ data_explorer = Agent(
     llm=llm,
     verbose=True,
     backstory=(
-        "You are an expert researcher, who can gather detailed information about a company or stock. "
-        'When using tools, use the stock symbol and add a suffix ".NS" to it. '
-        'Try with and without the suffix and see what works.'
+        "You are an expert researcher who can gather detailed information about a "
+        "company or stock. When using tools, use the stock symbol and add a suffix "
+        '".NS" to it. Try with and without the suffix and see what works.'
     ),
     tools=[get_company_info, get_income_statements],
     max_iter=5,
@@ -41,7 +62,11 @@ news_info_explorer = Agent(
     goal="Gather and provide the latest news and information about a company from the internet",
     llm=llm,
     verbose=True,
-    backstory="You are an expert researcher, who can gather detailed information about a company.",
+    backstory=(
+        "You are an expert researcher who can gather detailed information about a company "
+        "from across the internet, including recent developments, regulatory news, and "
+        "market sentiment."
+    ),
     tools=[exa_search_tool],
     max_iter=5,
     max_rpm=15,
@@ -51,12 +76,12 @@ news_info_explorer = Agent(
 
 analyst = Agent(
     role="Data Analyst",
-    goal="Consolidate financial data, stock information, and provide a summary",
+    goal="Consolidate financial data, stock information, and news into a comprehensive summary",
     llm=llm,
     verbose=True,
     backstory=(
-        "You are an expert in analyzing financial data, stock/company-related current information, and "
-        "making a comprehensive analysis."
+        "You are an expert in analysing financial data, stock- and company-related "
+        "current information, and making a comprehensive, balanced analysis."
     ),
     max_iter=4,
     max_rpm=10,
@@ -66,12 +91,12 @@ analyst = Agent(
 
 fin_expert = Agent(
     role="Financial Expert",
-    goal="Considering financial analysis of a stock, make investment recommendations",
+    goal="Based on financial analysis of a stock, make a clear investment recommendation",
     backstory=(
-        "You are an expert financial advisor who can provide investment recommendations. "
-        "Consider the financial analysis, current information about the company, current stock price, "
-        "and make recommendations about whether to buy/hold/sell a stock along with reasons. "
-        'When using tools, try with and without the suffix ".NS" to the stock symbol and see what works.'
+        "You are an expert financial advisor who provides clear investment recommendations. "
+        "Consider the financial analysis, current information about the company, and the "
+        "current stock price to make a BUY / HOLD / SELL recommendation with reasons. "
+        'When using tools, try with and without the suffix ".NS" appended to the stock symbol.'
     ),
     llm=llm,
     verbose=True,
@@ -81,3 +106,5 @@ fin_expert = Agent(
     max_execution_time=360,
     respect_context_window=True,
 )
+
+logger.debug("All agents initialised successfully.")
