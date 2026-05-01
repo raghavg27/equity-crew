@@ -437,3 +437,69 @@ def get_technical_indicators(symbol: str) -> str:
     except Exception as exc:
         logger.error("Error calculating technical indicators for %s: %s", symbol, exc)
         return f"Error calculating technical indicators for {symbol}: {exc}"
+
+
+@tool("Get valuation metrics for peer comparison")
+def get_valuation_metrics(symbol: str) -> str:
+    """Get a compact set of valuation and financial metrics for a stock, designed for
+    peer-to-peer comparison across companies in the same sector.
+
+    Metrics returned:
+      - P/E ratio (trailing)
+      - P/B ratio (price-to-book)
+      - EV/EBITDA
+      - ROE (return on equity)
+      - Revenue Growth (YoY)
+      - Gross Margin
+      - Net Margin (profit margin)
+      - Debt/Equity ratio
+      - Dividend Yield
+      - Market Cap
+      - 52-week price range
+
+    Args:
+        symbol: Stock ticker (e.g. AAPL, RELIANCE.NS, SUZLON.BO, TCS.NS).
+    Returns:
+        JSON string with all valuation metrics, or an error message.
+    """
+    symbol = symbol.strip()
+    logger.info("⚖️   Fetching valuation metrics for peer comparison: %s", symbol)
+    try:
+        raw = _with_retry(
+            lambda: yf.Ticker(symbol, session=session).info,
+            f"get_valuation_metrics({symbol})",
+        )
+        if not raw:
+            return f"Could not fetch metrics for {symbol}. Symbol may be incorrect."
+
+        metrics = {
+            "symbol": symbol,
+            "name": raw.get("shortName"),
+            "sector": raw.get("sector"),
+            "industry": raw.get("industry"),
+            "market_cap": raw.get("marketCap"),
+            "currency": raw.get("currency", "USD"),
+            "current_price": raw.get("regularMarketPrice") or raw.get("currentPrice"),
+            "pe_ratio_trailing": raw.get("trailingPE"),
+            "pe_ratio_forward": raw.get("forwardPE"),
+            "pb_ratio": raw.get("priceToBook"),
+            "ev_ebitda": raw.get("enterpriseToEbitda"),
+            "roe": raw.get("returnOnEquity"),
+            "revenue_growth_yoy": raw.get("revenueGrowth"),
+            "gross_margin": raw.get("grossMargins"),
+            "net_margin": raw.get("profitMargins"),
+            "debt_to_equity": raw.get("debtToEquity"),
+            "dividend_yield": raw.get("dividendYield"),
+            "52_week_low": raw.get("fiftyTwoWeekLow"),
+            "52_week_high": raw.get("fiftyTwoWeekHigh"),
+            "eps_trailing": raw.get("trailingEps"),
+            "revenue": raw.get("totalRevenue"),
+            "ebitda": raw.get("ebitda"),
+        }
+
+        logger.debug("Valuation metrics fetched for %s: %s", symbol, metrics.get("name"))
+        return json.dumps(metrics, default=str)
+
+    except Exception as exc:
+        logger.error("Error fetching valuation metrics for %s: %s", symbol, exc)
+        return f"Error fetching valuation metrics for {symbol}: {exc}"

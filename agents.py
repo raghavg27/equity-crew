@@ -5,6 +5,7 @@ Agents:
   - data_explorer       → fetches financial statements and company fundamentals
   - news_info_explorer  → searches for latest news and market sentiment
   - technical_analyst   → calculates and interprets technical indicators
+  - sector_analyst      → compares the stock against 4-5 industry peers on key valuation metrics
   - analyst             → synthesises all gathered data into a coherent analysis
   - fin_expert          → produces a final BUY / HOLD / SELL investment recommendation
 """
@@ -28,6 +29,7 @@ from tools import (
     get_insider_transactions,
     get_institutional_holdings,
     get_technical_indicators,
+    get_valuation_metrics,
 )
 
 load_dotenv()
@@ -112,6 +114,30 @@ technical_analyst = Agent(
     respect_context_window=True,
 )
 
+sector_analyst = Agent(
+    role="Sector & Peer Comparison Analyst",
+    goal=(
+        "Identify 4-5 key competitors or sector peers of the target stock and compare them "
+        "side-by-side on valuation multiples, margins, growth, and returns to determine whether "
+        "the target stock is overvalued, fairly valued, or undervalued relative to its peers"
+    ),
+    llm=llm,
+    verbose=True,
+    backstory=(
+        "You are an expert equity research analyst specialising in relative valuation and sector analysis. "
+        "Given a stock, you identify its closest 4-5 competitors from your knowledge of the market, "
+        "fetch their key financial metrics, and build a side-by-side comparison table covering "
+        "valuation multiples (P/E, P/B, EV/EBITDA), profitability (margins, ROE), growth (revenue YoY), "
+        "and capital structure (debt/equity). You then conclude whether the target stock trades at a "
+        "premium or discount to peers and why that premium/discount may or may not be justified."
+    ),
+    tools=[get_company_info, get_valuation_metrics],
+    max_iter=6,
+    max_rpm=12,
+    max_execution_time=480,
+    respect_context_window=True,
+)
+
 analyst = Agent(
     role="Senior Financial Analyst",
     goal=(
@@ -149,4 +175,4 @@ fin_expert = Agent(
     respect_context_window=True,
 )
 
-logger.debug("All 5 agents initialised successfully.")
+logger.debug("All 6 agents initialised successfully.")

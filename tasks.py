@@ -5,6 +5,7 @@ Tasks:
   - get_company_financials    → fundamentals + balance sheet + cash flow etc. (Phase 1, parallel)
   - get_company_news          → latest news and sentiment                      (Phase 1, parallel)
   - run_technical_analysis    → RSI, MACD, Bollinger Bands, MAs, volume       (Phase 1, parallel)
+  - compare_with_peers        → sector peer valuation comparison               (Phase 1, parallel)
   - analyse                   → full combined analysis                         (Phase 2, sequential)
   - advise                    → structured investment recommendation            (Phase 2, sequential)
 """
@@ -16,7 +17,7 @@ from crewai import Task
 from crewai.tasks.task_output import TaskOutput
 from pydantic import BaseModel, Field
 
-from agents import analyst, data_explorer, fin_expert, news_info_explorer, technical_analyst
+from agents import analyst, data_explorer, fin_expert, news_info_explorer, sector_analyst, technical_analyst
 from logger import get_logger
 
 logger = get_logger(__name__)
@@ -115,22 +116,43 @@ run_technical_analysis = Task(
     output_file="task_outputs/technical_analysis.md",
 )
 
+compare_with_peers = Task(
+    description=(
+        "Perform a relative valuation analysis for stock: {stock}. "
+        "Using your knowledge of the market, identify 4-5 of the closest sector competitors or peers. "
+        "Fetch their valuation metrics and build a side-by-side comparison covering: "
+        "P/E ratio, P/B ratio, EV/EBITDA, ROE, revenue growth, gross margin, net margin, "
+        "debt/equity ratio, and dividend yield. "
+        "Conclude whether {stock} is trading at a premium, discount, or in line with peers, "
+        "and explain whether that valuation gap is justified based on the company's fundamentals."
+    ),
+    expected_output=(
+        "A peer comparison report containing: "
+        "(1) a table of 4-5 peer companies with key metrics side by side, "
+        "(2) a relative valuation verdict (premium / discount / in-line vs peers), "
+        "(3) an explanation of whether the premium or discount is justified, "
+        "(4) key takeaways for the investor."
+    ),
+    agent=sector_analyst,
+    output_file="task_outputs/peer_comparison.md",
+)
+
 analyse = Task(
     description=(
-        "Using the fundamental financial data, latest news, and technical analysis gathered, "
-        "produce a thorough, balanced analysis of the stock. "
-        "Cover: financial health, valuation, growth prospects, technical outlook, and key risks."
+        "Using the fundamental financial data, latest news, technical analysis, and peer comparison "
+        "gathered, produce a thorough, balanced analysis of the stock. "
+        "Cover: financial health, valuation vs peers, growth prospects, technical outlook, and key risks."
     ),
     expected_output=(
         "A comprehensive stock analysis covering: "
         "(1) financial health and fundamentals, "
         "(2) news and sentiment summary, "
         "(3) technical outlook, "
-        "(4) valuation assessment, "
+        "(4) peer / relative valuation assessment, "
         "(5) key risks and opportunities."
     ),
     agent=analyst,
-    context=[get_company_financials, get_company_news, run_technical_analysis],
+    context=[get_company_financials, get_company_news, run_technical_analysis, compare_with_peers],
     output_file="task_outputs/financial_analysis.md",
 )
 
@@ -152,4 +174,4 @@ advise = Task(
     output_file="task_outputs/investment_recommendation.md",
 )
 
-logger.debug("All 5 tasks defined successfully.")
+logger.debug("All 6 tasks defined successfully.")

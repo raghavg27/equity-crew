@@ -1,8 +1,8 @@
 """
 Entry point for the AI-Powered Stocks Analyser.
 
-Orchestrates three CrewAI crews in two phases:
-  Phase 1 (parallel):    financial data gathering + news gathering
+Orchestrates four CrewAI crews in two phases:
+  Phase 1 (parallel):    financial data + news + technical analysis + peer comparison
   Phase 2 (sequential):  analysis → investment recommendation
 
 Usage:
@@ -32,8 +32,8 @@ logger = get_logger(__name__)
 # Imported here (after logger/validators) to ensure any import-time logging
 # in agents.py / tasks.py uses the already-configured logger.
 
-from agents import analyst, data_explorer, fin_expert, news_info_explorer, technical_analyst  # noqa: E402
-from tasks import advise, analyse, get_company_financials, get_company_news, run_technical_analysis  # noqa: E402
+from agents import analyst, data_explorer, fin_expert, news_info_explorer, sector_analyst, technical_analyst  # noqa: E402
+from tasks import advise, analyse, compare_with_peers, get_company_financials, get_company_news, run_technical_analysis  # noqa: E402
 
 financial_crew = Crew(
     agents=[data_explorer],
@@ -60,6 +60,15 @@ technical_crew = Crew(
     process=Process.sequential,
     cache=True,
     max_rpm=15,
+)
+
+peer_crew = Crew(
+    agents=[sector_analyst],
+    tasks=[compare_with_peers],
+    verbose=True,
+    process=Process.sequential,
+    cache=True,
+    max_rpm=12,
 )
 
 analysis_crew = Crew(
@@ -119,10 +128,10 @@ def run_parallel_execution(stock_input: dict) -> tuple[float, float]:
     logger.info("━" * 60)
 
     # ── Phase 1: Parallel data gathering ──────────────────────────────────────
-    logger.info("🔄  Phase 1: Financial Data, News & Technical Analysis (running in parallel)…")
+    logger.info("🔄  Phase 1: Financial Data, News, Technical Analysis & Peer Comparison (parallel)…")
     phase1_start = time.time()
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         financial_future = executor.submit(
             run_crew_task, financial_crew, stock_input, "Financial Data Gathering"
         )
@@ -132,17 +141,22 @@ def run_parallel_execution(stock_input: dict) -> tuple[float, float]:
         technical_future = executor.submit(
             run_crew_task, technical_crew, stock_input, "Technical Analysis"
         )
+        peer_future = executor.submit(
+            run_crew_task, peer_crew, stock_input, "Peer Comparison"
+        )
 
         # Retrieve results — any exception raised inside the thread is re-raised here
         financial_result = financial_future.result()
         news_result = news_future.result()
         technical_result = technical_future.result()
+        peer_result = peer_future.result()
 
     phase1_duration = time.time() - phase1_start
     logger.info("✅  Phase 1 complete in %.2f seconds.", phase1_duration)
     logger.debug("Financial result type: %s", type(financial_result))
     logger.debug("News result type: %s", type(news_result))
     logger.debug("Technical result type: %s", type(technical_result))
+    logger.debug("Peer comparison result type: %s", type(peer_result))
 
     # ── Phase 2: Sequential analysis ──────────────────────────────────────────
     logger.info("🔄  Phase 2: Analysis & Recommendation…")
@@ -313,6 +327,7 @@ def main() -> None:
         pct = (time_saved / estimated_sequential) * 100
         logger.info("  Efficiency gain     : %.1f%%", pct)
     logger.info("━" * 60)
+    logger.info("  📄  Peers     → task_outputs/peer_comparison.md")
     logger.info("  📄  Technical → task_outputs/technical_analysis.md")
     logger.info("  📄  Analysis  → task_outputs/financial_analysis.md")
     logger.info("  📄  Advice    → task_outputs/investment_recommendation.md")

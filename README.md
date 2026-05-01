@@ -10,7 +10,7 @@
 [![OpenRouter](https://img.shields.io/badge/OpenRouter-LLM%20Gateway-7C3AED?style=for-the-badge)](https://openrouter.ai)
 [![EXA](https://img.shields.io/badge/EXA-Neural%20Search-0EA5E9?style=for-the-badge)](https://exa.ai)
 
-*A production-grade, multi-agent AI system that performs institutional-quality stock research — combining fundamental analysis, real-time news intelligence, and technical chart analysis — fully automated.*
+*A production-grade, multi-agent AI system that performs institutional-quality stock research — combining fundamental analysis, real-time news intelligence, technical chart analysis, and sector peer comparison — fully automated.*
 
 </div>
 
@@ -23,8 +23,9 @@ This system orchestrates **5 specialised AI agents** that work in parallel and s
 1. **Fetches deep financial data** — income statements, balance sheet, cash flow, dividends, insider transactions, institutional holdings, and analyst recommendations
 2. **Searches the internet for real-time news** — using semantic neural search to surface the most relevant recent developments
 3. **Calculates technical indicators from scratch** — RSI, MACD, Bollinger Bands, SMA50/200, and volume analysis, all implemented using pure pandas (no TA library dependency)
-4. **Synthesises all three data streams** into a single structured analysis report
-5. **Outputs a validated investment recommendation** — BUY / HOLD / SELL with a confidence score, 12-month target price, key reasons, and risks
+4. **Benchmarks against sector peers** — identifies 4-5 competitors and builds a side-by-side valuation comparison (P/E, P/B, EV/EBITDA, ROE, margins, growth) to determine if the stock is over/under-valued relative to its sector
+5. **Synthesises all four data streams** into a single structured analysis report
+6. **Outputs a validated investment recommendation** — BUY / HOLD / SELL with a confidence score, 12-month target price, key reasons, and risks
 
 **Sample output (SUZLON.BO, run on 30 Apr 2026):**
 ```json
@@ -59,65 +60,62 @@ This system orchestrates **5 specialised AI agents** that work in parallel and s
           │  ✓ API connectivity (--validate)    │
           └─────────────────┬─────────────────┘
                             │
-          ╔═════════════════▼═════════════════╗
-          ║     PHASE 1 — Parallel (3 crews)  ║
-          ╚═══════╤═══════════╤═══════════╤═══╝
-                  │           │           │
-     ┌────────────▼──┐ ┌──────▼──────┐ ┌─▼──────────────────┐
-     │ Financial Crew│ │  News Crew  │ │  Technical Crew     │
-     │               │ │             │ │                     │
-     │ data_explorer │ │news_explorer│ │ technical_analyst   │
-     │               │ │             │ │                     │
-     │ Tools:        │ │ Tools:      │ │ Tools:              │
-     │ • company_info│ │ • exa_search│ │ • technical_        │
-     │ • income_stmt │ │             │ │   indicators        │
-     │ • balance_shee│ │             │ │   (RSI, MACD,       │
-     │ • cash_flow   │ │             │ │    BB, SMA, Vol)    │
-     │ • dividends   │ │             │ │                     │
-     │ • analyst_rec │ │             │ │                     │
-     │ • insider_tx  │ │             │ │                     │
-     │ • inst_holders│ │             │ │                     │
-     └───────┬───────┘ └──────┬──────┘ └─────────┬──────────┘
-             │                │                   │
-          ╔══▼════════════════▼═══════════════════▼══╗
-          ║     PHASE 2 — Sequential (1 crew)        ║
-          ╚═══════════════════╤══════════════════════╝
-                              │
-                    ┌─────────▼──────────┐
-                    │  analyst (Task 4)  │
-                    │  Combines all 3    │
-                    │  Phase 1 outputs   │
-                    └─────────┬──────────┘
-                              │
-                    ┌─────────▼──────────┐
-                    │ fin_expert (Task 5) │
-                    │ BUY/HOLD/SELL rec  │
-                    │ + Pydantic schema  │
-                    │ + guardrail check  │
-                    └─────────┬──────────┘
-                              │
-               ┌──────────────▼──────────────┐
-               │         Output Files         │
-               │  technical_analysis.md       │
-               │  financial_analysis.md       │
-               │  investment_recommendation.md│
-               │  logs/analyser_YYYYMMDD.log  │
-               └─────────────────────────────┘
+          ╔═════════════════▼══════════════════════╗
+          ║     PHASE 1 — Parallel (4 crews)       ║
+          ╚═══════╤═══════╤══════════╤═════════╤═══╝
+                  │       │          │         │
+     ┌────────────▼──┐ ┌──▼──────┐ ┌─▼──────┐ ┌─▼──────────────┐
+     │ Financial Crew│ │  News   │ │Tech    │ │  Peer Crew     │
+     │               │ │  Crew   │ │Crew    │ │                │
+     │ data_explorer │ │news_exp.│ │tech_   │ │ sector_analyst │
+     │               │ │         │ │analyst │ │                │
+     │ 8 yfinance    │ │ EXA     │ │RSI,MACD│ │ get_company_   │
+     │ tools         │ │ search  │ │BB,SMA  │ │ info +         │
+     │               │ │         │ │Volume  │ │ get_valuation_ │
+     │               │ │         │ │        │ │ metrics        │
+     └───────┬───────┘ └──┬──────┘ └──┬─────┘ └───────┬────────┘
+             │             │           │               │
+          ╔══▼═════════════▼═══════════▼═══════════════▼══╗
+          ║     PHASE 2 — Sequential (1 crew)             ║
+          ╚═════════════════════╤══════════════════════════╝
+                                │
+                    ┌───────────▼────────────┐
+                    │  analyst  (Task 5)      │
+                    │  Combines all 4        │
+                    │  Phase 1 outputs       │
+                    └───────────┬────────────┘
+                                │
+                    ┌───────────▼────────────┐
+                    │ fin_expert (Task 6)     │
+                    │ BUY/HOLD/SELL rec       │
+                    │ + Pydantic schema       │
+                    │ + guardrail check       │
+                    └───────────┬────────────┘
+                                │
+               ┌────────────────▼────────────────┐
+               │           Output Files           │
+               │  peer_comparison.md              │
+               │  technical_analysis.md           │
+               │  financial_analysis.md           │
+               │  investment_recommendation.md    │
+               │  logs/analyser_YYYYMMDD.log      │
+               └─────────────────────────────────┘
 ```
 
 ---
 
 ## 🧠 Agent Design
 
-The system uses **5 specialised agents**, each with a distinct role, tailored backstory, tool access, and rate/execution limits:
+The system uses **6 specialised agents**, each with a distinct role, tailored backstory, tool access, and rate/execution limits:
 
 | Agent | Role | Tools | Key Design Decision |
 |---|---|---|---|
-| `data_explorer` | Fundamental Data Researcher | 8 yfinance tools | Given a larger `max_execution_time` (540s) to allow comprehensive data collection across multiple API calls |
-| `news_info_explorer` | News & Sentiment Researcher | EXA neural search | Uses semantic search rather than keyword search — surfaces contextually relevant news even when ticker isn't mentioned verbatim |
-| `technical_analyst` | Technical Chart Analyst | `get_technical_indicators` | Dedicated agent keeps technical context isolated — prevents the analyst from anchoring to chart signals before reading fundamentals |
-| `analyst` | Senior Financial Analyst | None (synthesis only) | Intentionally has no tools — forces the agent to reason purely from the structured context passed from Phase 1, not re-fetch data |
-| `fin_expert` | Investment Advisor | `get_current_stock_price` | Fetches the live price as the last step so the target price ratio reflects market conditions at recommendation time |
+| `data_explorer` | Fundamental Data Researcher | 8 yfinance tools | Larger `max_execution_time` (540s) — collecting 8 data sources in sequence takes time |
+| `news_info_explorer` | News & Sentiment Researcher | EXA neural search | Semantic search surfaces contextually relevant news even when the ticker isn't explicitly mentioned |
+| `technical_analyst` | Technical Chart Analyst | `get_technical_indicators` | Isolated agent keeps chart signals separate from fundamentals — prevents anchoring bias in the synthesis |
+| `sector_analyst` | Sector & Peer Comparison Analyst | `get_company_info` + `get_valuation_metrics` | Uses LLM's market knowledge to identify peers dynamically — no hardcoded peer maps, adapts to any stock globally |
+| `analyst` | Senior Financial Analyst | None (synthesis only) | Intentionally no tools — forced to reason from structured Phase 1 context, not re-fetch data |
+| `fin_expert` | Investment Advisor | `get_current_stock_price` | Fetches live price last so the target price ratio reflects market conditions at recommendation time |
 
 ---
 
@@ -151,6 +149,7 @@ def _with_retry(fn, label, max_retries=3, base_delay=1.5):
 | `get_analyst_recommendations` | `ticker.recommendations` | Most recent buy/hold/sell consensus |
 | `get_insider_transactions` | `ticker.insider_transactions` | Recent insider buying/selling activity |
 | `get_institutional_holdings` | `ticker.institutional_holders` | Top institutional shareholders and stake sizes |
+| `get_valuation_metrics` | `ticker.info` | Compact snapshot: P/E, P/B, EV/EBITDA, ROE, margins, D/E, dividend yield — designed for peer comparison |
 
 ### Technical Analysis Tool (implemented from scratch with `pandas`)
 
@@ -206,17 +205,19 @@ vol_ratio  = current_volume / avg_vol_20
 
 ### Parallel Execution with `ThreadPoolExecutor`
 
-Phase 1 runs 3 independent crews concurrently, cutting wall-clock time significantly compared to a fully sequential pipeline:
+Phase 1 runs **4 independent crews concurrently**, cutting wall-clock time significantly:
 
 ```python
-with ThreadPoolExecutor(max_workers=3) as executor:
+with ThreadPoolExecutor(max_workers=4) as executor:
     financial_future = executor.submit(run_crew_task, financial_crew, inputs, "Financial")
     news_future      = executor.submit(run_crew_task, news_crew,      inputs, "News")
     technical_future = executor.submit(run_crew_task, technical_crew, inputs, "Technical")
+    peer_future      = executor.submit(run_crew_task, peer_crew,      inputs, "Peers")
 
-    financial_result = financial_future.result()  # blocks until done
+    financial_result = financial_future.result()
     news_result      = news_future.result()
     technical_result = technical_future.result()
+    peer_result      = peer_future.result()
 ```
 
 At the end of every run, the system reports estimated time saved:
@@ -282,9 +283,9 @@ Two handlers on one logger — operators see clean output, debug logs preserve f
 ai-powered-stocks-analyser/
 │
 ├── main.py           # CLI entry point — orchestrates crews, parallel execution, error handling
-├── agents.py         # 5 CrewAI agent definitions with roles, backstories, tools, and limits
-├── tasks.py          # 5 task definitions with descriptions, expected outputs, and guardrails
-├── tools.py          # 10 tools: 8 fundamental data tools + 1 technical + 1 EXA news search
+├── agents.py         # 6 CrewAI agent definitions with roles, backstories, tools, and limits
+├── tasks.py          # 6 task definitions with descriptions, expected outputs, and guardrails
+├── tools.py          # 11 tools: 8 fundamental + 1 valuation metrics + 1 technical + 1 EXA search
 ├── logger.py         # Centralised logging — console (INFO) + rotating file (DEBUG)
 ├── validators.py     # Startup checks: env vars, symbol format, live API connectivity
 │
@@ -293,6 +294,7 @@ ai-powered-stocks-analyser/
 │   └── tasks.yaml    # Task configuration templates
 │
 ├── task_outputs/     # Generated reports (gitignored)
+│   ├── peer_comparison.md
 │   ├── technical_analysis.md
 │   ├── financial_analysis.md
 │   └── investment_recommendation.md
@@ -358,8 +360,9 @@ Three markdown reports are generated in `task_outputs/`:
 
 | File | Contents |
 |---|---|
+| `peer_comparison.md` | Side-by-side peer valuation table, premium/discount verdict, key takeaways |
 | `technical_analysis.md` | RSI, MACD, Bollinger Bands, MAs, volume analysis, technical outlook |
-| `financial_analysis.md` | Full fundamental + news + technical synthesis |
+| `financial_analysis.md` | Full fundamental + news + technical + peer synthesis |
 | `investment_recommendation.md` | Structured JSON: action, confidence, target, reasons, risks |
 
 A debug log is written to `logs/analyser_YYYYMMDD.log` after every run.
@@ -413,7 +416,7 @@ Tasks 1, 2, and 3 have no dependency on each other — they can start simultaneo
 
 **Why OpenRouter instead of OpenAI directly?** OpenRouter provides a unified gateway to multiple LLMs (GPT, Claude, Gemini, Llama, etc.) under one API. This makes it trivial to swap models by changing a single config string — useful for cost/quality tradeoffs.
 
-**Why implement TA indicators in raw pandas?** Adding `ta` or `pandas-ta` introduces 30+ transitive dependencies. Implementing RSI, MACD, and Bollinger Bands in pandas (already a yfinance dependency) keeps the environment lean and the logic fully transparent and auditable.
+**Why identify peers dynamically via LLM rather than a hardcoded map?** A static peer mapping would cover only stocks we've pre-configured and would quickly go stale as companies enter/exit sectors. The LLM has broad market knowledge and can identify the most relevant competitors for any stock globally — from Nifty50 to NASDAQ — without maintenance overhead. The `get_valuation_metrics` tool then fetches live data for whichever peers the agent selects.
 
 **Why the guardrail pattern?** LLMs can hallucinate or produce malformed structured output. The Pydantic schema + guardrail function creates a closed feedback loop — if the output is invalid, CrewAI feeds the validation error back to the agent as a correction prompt and retries automatically.
 
