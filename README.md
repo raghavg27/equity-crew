@@ -12,6 +12,8 @@
 
 *A production-grade, multi-agent AI system that performs institutional-quality stock research — combining fundamental analysis, real-time news intelligence, technical chart analysis, and sector peer comparison — fully automated.*
 
+![PDF Report Screenshot](assets/report_screenshot.png)
+
 </div>
 
 ---
