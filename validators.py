@@ -106,6 +106,54 @@ def validate_stock_symbol(symbol: str) -> bool:
     return True
 
 
+def resolve_stock_symbol(symbol: str) -> str | None:
+    """
+    Auto-detects if a stock symbol needs an exchange suffix (.NS or .BO)
+    by testing it against yfinance.
+    
+    Returns the valid symbol string, or None if it cannot be found.
+    """
+    symbol = symbol.strip().upper()
+    if not validate_stock_symbol(symbol):
+        return None
+        
+    import yfinance as yf
+    import warnings
+    
+    def _is_valid(sym: str) -> bool:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            try:
+                # A quick check using history. If it's empty, it's invalid.
+                t = yf.Ticker(sym)
+                hist = t.history(period="1d")
+                return not hist.empty
+            except Exception:
+                return False
+
+    logger.info("🔍  Validating symbol '%s' with yfinance...", symbol)
+    
+    if _is_valid(symbol):
+        return symbol
+        
+    if "." not in symbol:
+        logger.info("⚠️   Symbol '%s' not found. Testing with .NS suffix...", symbol)
+        if _is_valid(f"{symbol}.NS"):
+            logger.info("✅  Auto-corrected to %s", f"{symbol}.NS")
+            return f"{symbol}.NS"
+            
+        logger.info("⚠️   Symbol '%s.NS' not found. Testing with .BO suffix...", symbol)
+        if _is_valid(f"{symbol}.BO"):
+            logger.info("✅  Auto-corrected to %s", f"{symbol}.BO")
+            return f"{symbol}.BO"
+
+    logger.error(
+        "❌  Could not find market data for '%s' (tried bare, .NS, and .BO).\n"
+        "    ➜  Check if the symbol is correct or if it was delisted.", symbol
+    )
+    return None
+
+
 # ── Live API Connectivity Checks ──────────────────────────────────────────────
 
 

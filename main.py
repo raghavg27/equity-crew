@@ -24,7 +24,7 @@ from report_generator import generate_pdf_report
 from validators import (
     run_connectivity_checks,
     validate_env_vars,
-    validate_stock_symbol,
+    resolve_stock_symbol,
 )
 
 logger = get_logger(__name__)
@@ -252,14 +252,12 @@ def main() -> None:
         success = run_connectivity_checks()
         sys.exit(0 if success else 1)
 
-    # ── Step 3: Validate stock symbol format ───────────────────────────────────
-    if not validate_stock_symbol(args.stock):
-        logger.error(
-            "Startup aborted: invalid stock symbol '%s'.\n"
-            "    ➜  Example valid symbols: RELIANCE.NS  SUZLON.BO  AAPL  ^NSEI",
-            args.stock,
-        )
+    # ── Step 3: Validate and Resolve Stock Symbol ──────────────────────────────
+    resolved_stock = resolve_stock_symbol(args.stock)
+    if not resolved_stock:
         sys.exit(1)
+        
+    args.stock = resolved_stock
 
     # ── Step 4: Run the analysis ───────────────────────────────────────────────
     stock_input = {"stock": args.stock}
