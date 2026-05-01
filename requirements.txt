@@ -4,3 +4,9 @@ python-dotenv
 pydantic
 yfinance
 curl_cffi
+pytest
+pytest-mock
+jinja2
+weasyprint
+matplotlib
+markdown

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Equity Research Report - {{ symbol }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 20mm;
+            @bottom-center {
+                content: "Page " counter(page) " of " counter(pages);
+                font-size: 10pt;
+                color: #666;
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            }
+            @bottom-right {
+                content: "AI-Powered Stocks Analyser";
+                font-size: 10pt;
+                color: #666;
+                font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            }
+        }
+        body {
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            color: #333;
+            line-height: 1.5;
+            font-size: 11pt;
+            margin: 0;
+        }
+        h1, h2, h3 {
+            color: #1a202c;
+            margin-top: 1.5em;
+        }
+        h1 {
+            font-size: 24pt;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 5px;
+            margin-top: 0;
+        }
+        h2 {
+            font-size: 18pt;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 3px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header-date {
+            color: #718096;
+            font-size: 12pt;
+        }
+        .badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 16pt;
+            text-transform: uppercase;
+            color: white;
+            text-align: center;
+        }
+        .badge-buy { background-color: #38a169; }
+        .badge-hold { background-color: #d69e2e; }
+        .badge-sell { background-color: #e53e3e; }
+        
+        .summary-card {
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .metrics-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        .metric-box {
+            flex: 1;
+            min-width: 120px;
+            background: white;
+            border: 1px solid #cbd5e0;
+            padding: 10px;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .metric-label {
+            font-size: 9pt;
+            color: #718096;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .metric-value {
+            font-size: 12pt;
+            font-weight: bold;
+            color: #2d3748;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        th {
+            background-color: #f7fafc;
+            color: #4a5568;
+            font-weight: bold;
+        }
+        .chart-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+        .chart-img {
+            max-width: 100%;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+        }
+        .risks-list, .reasons-list {
+            margin: 0;
+            padding-left: 20px;
+        }
+        .risks-list li { color: #c53030; margin-bottom: 5px; }
+        .reasons-list li { color: #276749; margin-bottom: 5px; }
+        
+        .markdown-content { margin-top: 20px; }
+        .markdown-content p { margin-bottom: 15px; }
+        .markdown-content ul { padding-left: 20px; }
+        .markdown-content li { margin-bottom: 5px; }
+        
+        .page-break { page-break-before: always; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Equity Research Report: {{ symbol }}</h1>
+        <div class="header-date">Generated on: {{ date }}</div>
+        {% if company_name %}<h2>{{ company_name }}</h2>{% endif %}
+    </div>
+
+    <div class="summary-card">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div class="badge 
+                {% if recommendation.action == 'BUY' %}badge-buy
+                {% elif recommendation.action == 'SELL' %}badge-sell
+                {% else %}badge-hold{% endif %}">
+                Recommendation: {{ recommendation.action }}
+            </div>
+            <div style="margin-top: 10px; font-size: 12pt;">
+                <strong>Confidence:</strong> {{ (recommendation.confidence * 100) | round }}% &nbsp;|&nbsp; 
+                <strong>Current Price:</strong> {{ recommendation.current_price }} &nbsp;|&nbsp; 
+                <strong>12M Target:</strong> {{ recommendation.target_price }}
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div style="flex: 1;">
+                <h3 style="margin-top: 0;">Key Reasons</h3>
+                <ul class="reasons-list">
+                    {% for reason in recommendation.reasons %}
+                        <li>{{ reason }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div style="flex: 1;">
+                <h3 style="margin-top: 0;">Key Risks</h3>
+                <ul class="risks-list">
+                    {% for risk in recommendation.risks %}
+                        <li>{{ risk }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    {% if metrics %}
+    <h2>Key Financial Metrics</h2>
+    <div class="metrics-grid">
+        <div class="metric-box"><div class="metric-label">Market Cap</div><div class="metric-value">{{ metrics.get('market_cap', 'N/A') }}</div></div>
+        <div class="metric-box"><div class="metric-label">P/E (Trailing)</div><div class="metric-value">{{ metrics.get('pe_ratio_trailing', 'N/A') }}</div></div>
+        <div class="metric-box"><div class="metric-label">P/E (Forward)</div><div class="metric-value">{{ metrics.get('pe_ratio_forward', 'N/A') }}</div></div>
+        <div class="metric-box"><div class="metric-label">P/B Ratio</div><div class="metric-value">{{ metrics.get('pb_ratio', 'N/A') }}</div></div>
+        <div class="metric-box"><div class="metric-label">ROE</div><div class="metric-value">{{ metrics.get('roe', 'N/A') }}</div></div>
+        <div class="metric-box"><div class="metric-label">Div Yield</div><div class="metric-value">{{ metrics.get('dividend_yield', 'N/A') }}</div></div>
+        <div class="metric-box"><div class="metric-label">D/E Ratio</div><div class="metric-value">{{ metrics.get('debt_to_equity', 'N/A') }}</div></div>
+    </div>
+    {% endif %}
+
+    {% if chart_img_base64 %}
+    <div class="chart-container">
+        <h2>1-Year Price History & Moving Averages</h2>
+        <img class="chart-img" src="data:image/png;base64,{{ chart_img_base64 }}" alt="Price Chart">
+    </div>
+    {% endif %}
+
+    <div class="page-break"></div>
+
+    <h2>Comprehensive Analysis</h2>
+    <div class="markdown-content">
+        {{ financial_analysis_html }}
+    </div>
+    
+    <div class="page-break"></div>
+
+    <h2>Technical Analysis</h2>
+    <div class="markdown-content">
+        {{ technical_analysis_html }}
+    </div>
+    
+    <div class="page-break"></div>
+    
+    <h2>Peer Comparison</h2>
+    <div class="markdown-content">
+        {{ peer_comparison_html }}
+    </div>
+
+</body>
+</html>

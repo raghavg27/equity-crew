@@ -26,6 +26,7 @@ This system orchestrates **5 specialised AI agents** that work in parallel and s
 4. **Benchmarks against sector peers** — identifies 4-5 competitors and builds a side-by-side valuation comparison (P/E, P/B, EV/EBITDA, ROE, margins, growth) to determine if the stock is over/under-valued relative to its sector
 5. **Synthesises all four data streams** into a single structured analysis report
 6. **Outputs a validated investment recommendation** — BUY / HOLD / SELL with a confidence score, 12-month target price, key reasons, and risks
+7. **Generates a Rich PDF Report** — compiles the recommendation badge, key metrics, matplotlib price charts, and full analysis texts into a beautifully formatted PDF document.
 
 **Sample output (SUZLON.BO, run on 30 Apr 2026):**
 ```json
@@ -98,6 +99,7 @@ This system orchestrates **5 specialised AI agents** that work in parallel and s
                │  technical_analysis.md           │
                │  financial_analysis.md           │
                │  investment_recommendation.md    │
+               │  [SYMBOL]_Report_YYYYMMDD.pdf    │
                │  logs/analyser_YYYYMMDD.log      │
                └─────────────────────────────────┘
 ```
@@ -297,7 +299,8 @@ ai-powered-stocks-analyser/
 │   ├── peer_comparison.md
 │   ├── technical_analysis.md
 │   ├── financial_analysis.md
-│   └── investment_recommendation.md
+│   ├── investment_recommendation.md
+│   └── *_Report_*.pdf
 │
 ├── logs/             # Daily debug log files (gitignored)
 │   └── analyser_YYYYMMDD.log
@@ -356,10 +359,11 @@ python main.py --stock TCS.NS --log-level DEBUG
 
 ### Output
 
-Three markdown reports are generated in `task_outputs/`:
+Four markdown reports and a rich PDF are generated in `task_outputs/`:
 
 | File | Contents |
 |---|---|
+| `[SYMBOL]_Report_[DATE].pdf` | **Compiled final PDF report** with badges, charts, and analysis. |
 | `peer_comparison.md` | Side-by-side peer valuation table, premium/discount verdict, key takeaways |
 | `technical_analysis.md` | RSI, MACD, Bollinger Bands, MAs, volume analysis, technical outlook |
 | `financial_analysis.md` | Full fundamental + news + technical + peer synthesis |

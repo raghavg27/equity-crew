@@ -20,6 +20,7 @@ from concurrent.futures import ThreadPoolExecutor
 from crewai import Crew, Process
 
 from logger import get_logger
+from report_generator import generate_pdf_report
 from validators import (
     run_connectivity_checks,
     validate_env_vars,
@@ -331,6 +332,12 @@ def main() -> None:
     logger.info("  📄  Technical → task_outputs/technical_analysis.md")
     logger.info("  📄  Analysis  → task_outputs/financial_analysis.md")
     logger.info("  📄  Advice    → task_outputs/investment_recommendation.md")
+    
+    # Generate the Rich PDF Report
+    pdf_path = generate_pdf_report(args.stock)
+    if pdf_path:
+        logger.info("  📊  PDF Report→ %s", pdf_path)
+        
     logger.info("  📋  Full logs → logs/analyser_%s.log", time.strftime("%Y%m%d"))
     logger.info("━" * 60)
 
