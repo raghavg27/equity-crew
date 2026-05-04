@@ -9,6 +9,7 @@
 [![yfinance](https://img.shields.io/badge/yfinance-Market%20Data-4CAF50?style=for-the-badge)](https://pypi.org/project/yfinance/)
 [![OpenRouter](https://img.shields.io/badge/OpenRouter-LLM%20Gateway-7C3AED?style=for-the-badge)](https://openrouter.ai)
 [![EXA](https://img.shields.io/badge/EXA-Neural%20Search-0EA5E9?style=for-the-badge)](https://exa.ai)
+[![Hire Me](https://img.shields.io/badge/Available%20for%20Hire-AI%20Engineering-000000?style=for-the-badge&logo=github)](https://github.com/raghavg27)
 
 *A production-grade, multi-agent AI system that performs institutional-quality stock research — combining fundamental analysis, real-time news intelligence, technical chart analysis, and sector peer comparison — fully automated.*
 
@@ -438,6 +439,21 @@ Tasks 1, 2, and 3 have no dependency on each other — they can start simultaneo
 - **Historical tracking** — SQLite log of past recommendations vs actual price outcomes
 - **Alerting** — Email/Telegram notification when a high-confidence BUY is detected
 - **PDF report generation** — Formatted research report via Jinja2 + WeasyPrint
+
+---
+
+## 👨‍💻 Why Hire Me for Your AI Engineering Team?
+
+If you are a recruiter or an engineering manager looking for a **Senior AI Engineer or GenAI Developer**, this project demonstrates my ability to build **production-ready AI systems**, not just Jupyter notebook prototypes. 
+
+Here is what this project proves I can bring to your team:
+- **Advanced Multi-Agent Orchestration:** Deep understanding of delegating complex tasks to specialised autonomous agents using frameworks like CrewAI.
+- **Production-Grade Reliability:** Implemented exponential backoff for APIs, strict Pydantic schemas for LLM output guardrails, and dual-handler structured logging.
+- **System Architecture & Performance:** Custom parallel execution pipeline using `ThreadPoolExecutor`, drastically cutting down wall-clock time by ~40% while respecting task dependencies.
+- **Integration of Real-World APIs:** Seamlessly integrated financial data (`yfinance`), neural search (`EXA`), and multi-LLM gateways (`OpenRouter`).
+- **End-to-End Delivery:** From CLI architecture to rich automated PDF generation, the system is designed as a complete, user-facing product.
+
+Feel free to reach out to me for roles involving LLMs, autonomous agents, and AI backend infrastructure!
 
 ---
 
