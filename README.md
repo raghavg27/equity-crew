@@ -9,6 +9,7 @@
 [![yfinance](https://img.shields.io/badge/yfinance-Market%20Data-4CAF50?style=for-the-badge)](https://pypi.org/project/yfinance/)
 [![OpenRouter](https://img.shields.io/badge/OpenRouter-LLM%20Gateway-7C3AED?style=for-the-badge)](https://openrouter.ai)
 [![EXA](https://img.shields.io/badge/EXA-Neural%20Search-0EA5E9?style=for-the-badge)](https://exa.ai)
+[![CI](https://github.com/raghavg27/ai-powered-stocks-analyser/actions/workflows/ci.yml/badge.svg)](https://github.com/raghavg27/ai-powered-stocks-analyser/actions/workflows/ci.yml)
 [![Hire Me](https://img.shields.io/badge/Available%20for%20Hire-AI%20Engineering-000000?style=for-the-badge&logo=github)](https://github.com/raghavg27)
 
 *A production-grade, multi-agent AI system that performs institutional-quality stock research — combining fundamental analysis, real-time news intelligence, technical chart analysis, and sector peer comparison — fully automated.*
@@ -288,11 +289,26 @@ Two handlers on one logger — operators see clean output, debug logs preserve f
 ai-powered-stocks-analyser/
 │
 ├── main.py           # CLI entry point — orchestrates crews, parallel execution, error handling
+├── app.py            # Streamlit web UI — live progress, results, PDF download
 ├── agents.py         # 6 CrewAI agent definitions with roles, backstories, tools, and limits
 ├── tasks.py          # 6 task definitions with descriptions, expected outputs, and guardrails
 ├── tools.py          # 11 tools: 8 fundamental + 1 valuation metrics + 1 technical + 1 EXA search
 ├── logger.py         # Centralised logging — console (INFO) + rotating file (DEBUG)
 ├── validators.py     # Startup checks: env vars, symbol format, live API connectivity
+├── report_generator.py # PDF report compilation via Jinja2 + WeasyPrint
+│
+├── tests/
+│   ├── conftest.py         # Shared fixtures and dummy credentials
+│   ├── test_validators.py  # Symbol format, env-var, and resolution tests
+│   ├── test_tools.py       # RSI/MACD/Bollinger maths, retry logic, mocked yfinance
+│   └── test_tasks.py       # Pydantic schema and guardrail tests
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml          # GitHub Actions — runs tests on Python 3.11 & 3.12
+│
+├── .streamlit/
+│   └── config.toml         # Dark theme for Streamlit UI
 │
 ├── config/
 │   ├── agents.yaml   # Agent configuration templates
@@ -308,6 +324,8 @@ ai-powered-stocks-analyser/
 ├── logs/             # Daily debug log files (gitignored)
 │   └── analyser_YYYYMMDD.log
 │
+├── pytest.ini        # Test configuration — pythonpath and testpaths
+├── packages.txt      # Streamlit Cloud system dependencies (WeasyPrint/Pango)
 ├── requirements.txt
 ├── .env              # API keys (gitignored)
 └── .gitignore
@@ -431,9 +449,51 @@ Tasks 1, 2, and 3 have no dependency on each other — they can start simultaneo
 
 ---
 
+## 🧪 Testing & CI
+
+The project ships with a full unit test suite and GitHub Actions CI that runs on every push.
+
+```bash
+# Run the test suite locally
+pytest
+
+# Verbose output
+pytest -v
+```
+
+**59 tests across 3 modules — all run without real API credentials (yfinance and LLM calls are mocked):**
+
+| Module | What it tests |
+|---|---|
+| `tests/test_validators.py` | Symbol regex rules, env-var presence checks, yfinance symbol resolution (mocked) |
+| `tests/test_tools.py` | RSI / MACD / Bollinger maths, exponential-backoff retry logic, `get_company_info` with mocked yfinance |
+| `tests/test_tasks.py` | `InvestmentRecommendation` Pydantic schema, all `validate_recommendation` guardrail branches |
+
+**Key testing patterns demonstrated:**
+
+- **Pure-function math tests** — RSI/MACD/Bollinger computed on synthetic pandas Series with known properties (strictly increasing prices → RSI = 100; histogram always equals MACD − signal)
+- **Mock-based isolation** — `unittest.mock.patch` used to replace yfinance, time.sleep, and dotenv so tests are fast, deterministic, and free
+- **Guardrail boundary tests** — confidence at 0.0, 1.0, −0.1, 1.5; 0/1/2 reasons; empty risks list
+- **Parametrised symbol validation** — `@pytest.mark.parametrize` covering US, NSE, BSE, index, and hyphenated tickers in a single test
+
+CI runs on **Python 3.11 and 3.12** via GitHub Actions on every push and pull request to `main`.
+
+---
+
+## 🌐 Web Interface
+
+In addition to the CLI, a **Streamlit web app** is included for interactive use:
+
+```bash
+streamlit run app.py
+```
+
+Features: live per-agent progress updates, colour-coded BUY/HOLD/SELL banner, tabbed reports (Financial · Technical · Peers · Price Chart), and a one-click PDF download.
+
+---
+
 ## 📈 Potential Extensions
 
-- **Streamlit Web UI** — Interactive dashboard with live progress, charts, and recommendation cards
 - **Watchlist mode** — `--watchlist RELIANCE.NS,TCS.NS,INFY.NS` for batch analysis
 - **Result caching** — Skip re-fetching data fetched within the last N hours
 - **Historical tracking** — SQLite log of past recommendations vs actual price outcomes

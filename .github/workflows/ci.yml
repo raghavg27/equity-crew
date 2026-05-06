@@ -1,0 +1,50 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Run tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    env:
+      # Dummy credentials — allow module-level initialisation in tools.py /
+      # agents.py to succeed without making real API calls.
+      OPENROUTER_API_KEY: test-openrouter-key-ci
+      EXA_API_KEY: test-exa-key-ci
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install system dependencies (WeasyPrint / Pango)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            libglib2.0-0t64 \
+            libpango-1.0-0 \
+            libpangocairo-1.0-0 \
+            libpangoft2-1.0-0 \
+            libcairo2 \
+            libharfbuzz0b \
+            libfontconfig1
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run tests
+        run: pytest --tb=short -v
