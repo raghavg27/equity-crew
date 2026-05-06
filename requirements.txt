@@ -10,3 +10,4 @@ jinja2
 weasyprint
 matplotlib
 markdown
+streamlit
