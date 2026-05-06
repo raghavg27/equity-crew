@@ -1,5 +1,5 @@
 """
-Startup validation utilities for the AI-Powered Stocks Analyser.
+Startup validation utilities for Equity Crew.
 
 Validates:
   - Required environment variables are present and non-empty.

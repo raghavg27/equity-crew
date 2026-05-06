@@ -1,5 +1,5 @@
 """
-CrewAI agent definitions for the AI-Powered Stocks Analyser.
+CrewAI agent definitions for Equity Crew.
 
 Agents:
   - data_explorer       → fetches financial statements and company fundamentals

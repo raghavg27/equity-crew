@@ -1,13 +1,13 @@
-# Contributing to AI-Powered Stocks Analyser
+# Contributing to Equity Crew
 
-Thank you for your interest in contributing to the AI-Powered Stocks Analyser! This project is designed to demonstrate high-level AI engineering patterns, and we welcome contributions that maintain or improve its architectural integrity and reliability.
+Thank you for your interest in contributing to Equity Crew! This project is designed to demonstrate high-level AI engineering patterns, and we welcome contributions that maintain or improve its architectural integrity and reliability.
 
 ## 🚀 Development Workflow
 
 1.  **Clone the repository**:
     ```bash
-    git clone https://github.com/raghavg27/ai-powered-stocks-analyser.git
-    cd ai-powered-stocks-analyser
+    git clone https://github.com/raghavg27/equity-crew.git
+    cd equity-crew
     ```
 2.  **Set up the environment**:
     ```bash

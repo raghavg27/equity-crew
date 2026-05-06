@@ -1,5 +1,5 @@
 """
-CrewAI task definitions for the AI-Powered Stocks Analyser.
+CrewAI task definitions for Equity Crew.
 
 Tasks:
   - get_company_financials    → fundamentals + balance sheet + cash flow etc. (Phase 1, parallel)

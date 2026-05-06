@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide provides instructions for deploying the AI-Powered Stocks Analyser to various environments, ensuring that the multi-agent system and PDF generation features work reliably.
+This guide provides instructions for deploying Equity Crew to various environments, ensuring that the multi-agent system and PDF generation features work reliably.
 
 ## 🐳 Docker Deployment (Recommended)
 

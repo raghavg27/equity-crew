@@ -1,5 +1,5 @@
 """
-Streamlit Web UI for the AI-Powered Stocks Analyser.
+Streamlit Web UI for Equity Crew.
 
 Run from the project root:
     streamlit run app.py
@@ -294,7 +294,7 @@ if go and sym.strip():
 # ── Landing page ──────────────────────────────────────────────────────────────
 
 elif st.session_state.state == "idle":
-    st.markdown("# AI-Powered Stock Analyser")
+    st.markdown("# Equity Crew")
     st.markdown(
         "Enter any stock ticker in the sidebar to run a full multi-agent investment analysis. "
         "Six AI agents work in two phases to produce a **BUY / HOLD / SELL** recommendation "

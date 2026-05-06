@@ -1,5 +1,5 @@
 """
-Custom tools for the AI-Powered Stocks Analyser.
+Custom tools for Equity Crew.
 
 Provides yfinance-based financial data tools and the EXA news search tool.
 All yfinance calls are wrapped with exponential-backoff retry logic.

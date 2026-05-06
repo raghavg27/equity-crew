@@ -1,5 +1,5 @@
 """
-Centralized logging configuration for the AI-Powered Stocks Analyser.
+Centralized logging configuration for Equity Crew.
 
 Usage:
     from logger import get_logger

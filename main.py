@@ -1,5 +1,5 @@
 """
-Entry point for the AI-Powered Stocks Analyser.
+Entry point for Equity Crew.
 
 Orchestrates four CrewAI crews in two phases:
   Phase 1 (parallel):    financial data + news + technical analysis + peer comparison
@@ -178,7 +178,7 @@ def run_parallel_execution(stock_input: dict) -> tuple[float, float]:
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="main.py",
-        description="AI-Powered Stock Analyser — multi-agent financial analysis tool",
+        description="Equity Crew — multi-agent financial analysis tool",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=(
             "Examples:\n"
@@ -236,7 +236,7 @@ def main() -> None:
     _set_console_log_level(args.log_level)
 
     logger.info("━" * 60)
-    logger.info("AI-Powered Stocks Analyser")
+    logger.info("Equity Crew")
     logger.info("━" * 60)
 
     # ── Step 1: Validate environment variables ─────────────────────────────────

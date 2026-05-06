@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🤖 AI-Powered Stock Analyser
+# 🤖 Equity Crew
 
 ### Multi-Agent Financial Intelligence System Built with CrewAI
 
@@ -9,7 +9,7 @@
 [![yfinance](https://img.shields.io/badge/yfinance-Market%20Data-4CAF50?style=for-the-badge)](https://pypi.org/project/yfinance/)
 [![OpenRouter](https://img.shields.io/badge/OpenRouter-LLM%20Gateway-7C3AED?style=for-the-badge)](https://openrouter.ai)
 [![EXA](https://img.shields.io/badge/EXA-Neural%20Search-0EA5E9?style=for-the-badge)](https://exa.ai)
-[![CI](https://github.com/raghavg27/ai-powered-stocks-analyser/actions/workflows/ci.yml/badge.svg)](https://github.com/raghavg27/ai-powered-stocks-analyser/actions/workflows/ci.yml)
+[![CI](https://github.com/raghavg27/equity-crew/actions/workflows/ci.yml/badge.svg)](https://github.com/raghavg27/equity-crew/actions/workflows/ci.yml)
 [![Hire Me](https://img.shields.io/badge/Available%20for%20Hire-AI%20Engineering-000000?style=for-the-badge&logo=github)](https://github.com/raghavg27)
 
 *A production-grade, multi-agent AI system that performs institutional-quality stock research — combining fundamental analysis, real-time news intelligence, technical chart analysis, and sector peer comparison — fully automated.*
@@ -286,7 +286,7 @@ Two handlers on one logger — operators see clean output, debug logs preserve f
 ## 📁 Project Structure
 
 ```
-ai-powered-stocks-analyser/
+equity-crew/
 │
 ├── main.py           # CLI entry point — orchestrates crews, parallel execution, error handling
 ├── app.py            # Streamlit web UI — live progress, results, PDF download
@@ -345,8 +345,8 @@ ai-powered-stocks-analyser/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/raghavg27/ai-powered-stocks-analyser.git
-cd ai-powered-stocks-analyser
+git clone https://github.com/raghavg27/equity-crew.git
+cd equity-crew
 
 # 2. Create and activate a virtual environment
 python -m venv venv
