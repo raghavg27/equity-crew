@@ -1,0 +1,11 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8501:8501"
+    env_file:
+      - .env
+    volumes:
+      - ./task_outputs:/app/task_outputs
+      - ./logs:/app/logs
+    restart: always

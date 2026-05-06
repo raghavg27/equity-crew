@@ -360,6 +360,14 @@ cp .env.example .env
 # Edit .env and add your API keys:
 # OPENROUTER_API_KEY=sk-or-v1-...
 # EXA_API_KEY=...
+
+### 🐳 Docker & Cloud Deployment
+
+For containerized setup or deploying to Streamlit Cloud, see the [Deployment Guide](DEPLOYMENT.md).
+
+### 🤝 Contributing
+
+Interested in adding new agents or financial tools? Check out our [Contributing Guide](CONTRIBUTING.md).
 ```
 
 ### Running the Analyser
